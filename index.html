@@ -57,6 +57,43 @@
       max-width: 40rem;
     }
 
+    .level-selection {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 1rem 0 0;
+    }
+
+    .level-option {
+      flex: 1 1 28%;
+      min-width: 120px;
+      text-align: center;
+      padding: 0.95rem 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(96, 113, 143, 0.15);
+      background: #f8faff;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .level-option:hover {
+      transform: translateY(-1px);
+      border-color: var(--primary);
+    }
+
+    .level-option.active {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .question-list {
+      display: grid;
+      gap: 1.5rem;
+    }
+
     .quiz-content {
       display: grid;
       gap: 1.5rem;
@@ -222,71 +259,17 @@
     </section>
 
     <section class="quiz-content" id="quizContent">
-      <div class="question-card" data-question="0">
-        <h2>1. Which HTML element is used to define important text?</h2>
-        <div class="options">
-          <label class="option">
-            <input type="radio" name="q0" value="strong" />
-            <span class="option-label">strong</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q0" value="important" />
-            <span class="option-label">important</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q0" value="bold" />
-            <span class="option-label">bold</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q0" value="em" />
-            <span class="option-label">em</span>
-          </label>
+      <div class="question-card">
+        <h2 style="margin:0;">Select your quiz level</h2>
+        <p class="option-label" style="margin-bottom:1rem;">Choose one of three levels to load a new set of quiz questions.</p>
+        <div class="level-selection" id="levelSelection" role="tablist" aria-label="Select quiz level">
+          <button class="level-option active" type="button" data-level="html">HTML</button>
+          <button class="level-option" type="button" data-level="css">CSS</button>
+          <button class="level-option" type="button" data-level="python">Python</button>
         </div>
       </div>
 
-      <div class="question-card" data-question="1">
-        <h2>2. Which CSS property controls the space between lines of text?</h2>
-        <div class="options">
-          <label class="option">
-            <input type="radio" name="q1" value="letter-spacing" />
-            <span class="option-label">letter-spacing</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q1" value="line-height" />
-            <span class="option-label">line-height</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q1" value="word-spacing" />
-            <span class="option-label">word-spacing</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q1" value="text-align" />
-            <span class="option-label">text-align</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="question-card" data-question="2">
-        <h2>3. What does JavaScript use to handle asynchronous actions?</h2>
-        <div class="options">
-          <label class="option">
-            <input type="radio" name="q2" value="promises" />
-            <span class="option-label">Promises</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q2" value="selectors" />
-            <span class="option-label">Selectors</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q2" value="flexbox" />
-            <span class="option-label">Flexbox</span>
-          </label>
-          <label class="option">
-            <input type="radio" name="q2" value="variables" />
-            <span class="option-label">Variables</span>
-          </label>
-        </div>
-      </div>
+      <div id="questionList" class="question-list"></div>
 
       <div class="quiz-actions">
         <button class="btn-secondary" id="resetBtn" type="button">Reset answers</button>
@@ -307,11 +290,73 @@
   </main>
 
   <script>
-    const answers = [
-      'strong',
-      'line-height',
-      'promises'
-    ];
+    const quizLevels = {
+      html: {
+        title: 'HTML Level',
+        description: 'Basics of HTML structure and semantics.',
+        questions: [
+          {
+            prompt: 'Which HTML element is used to define important text?',
+            options: ['strong', 'important', 'bold', 'em'],
+            answer: 'strong'
+          },
+          {
+            prompt: 'Which element is used to create a hyperlink?',
+            options: ['<a>', '<link>', '<url>', '<href>'],
+            answer: '<a>'
+          },
+          {
+            prompt: 'Which attribute defines the alternate text for an image?',
+            options: ['src', 'alt', 'title', 'name'],
+            answer: 'alt'
+          }
+        ]
+      },
+      css: {
+        title: 'CSS Level',
+        description: 'Styling fundamentals for responsive layouts.',
+        questions: [
+          {
+            prompt: 'Which CSS property controls the space between lines of text?',
+            options: ['letter-spacing', 'line-height', 'word-spacing', 'text-align'],
+            answer: 'line-height'
+          },
+          {
+            prompt: 'What CSS property is used to change text color?',
+            options: ['font-color', 'text-color', 'color', 'fill'],
+            answer: 'color'
+          },
+          {
+            prompt: 'Which display value helps build a flexible layout?',
+            options: ['grid', 'block', 'flex', 'inline'],
+            answer: 'flex'
+          }
+        ]
+      },
+      python: {
+        title: 'Python Level',
+        description: 'Core Python knowledge for beginner scripts.',
+        questions: [
+          {
+            prompt: 'Which keyword starts a function definition in Python?',
+            options: ['def', 'function', 'func', 'lambda'],
+            answer: 'def'
+          },
+          {
+            prompt: 'How do you create a list in Python?',
+            options: ['{1, 2, 3}', '[1, 2, 3]', '(1, 2, 3)', '<1, 2, 3>'],
+            answer: '[1, 2, 3]'
+          },
+          {
+            prompt: 'Which symbol begins a comment in Python?',
+            options: ['//', '#', '/*', '<!--'],
+            answer: '#'
+          }
+        ]
+      }
+    };
+
+    let currentLevel = 'html';
 
     const submitBtn = document.getElementById('submitBtn');
     const resetBtn = document.getElementById('resetBtn');
@@ -319,38 +364,81 @@
     const resultScore = document.getElementById('resultScore');
     const resultText = document.getElementById('resultText');
     const progressFilled = document.getElementById('progressFilled');
-    const totalQuestions = answers.length;
+    const questionList = document.getElementById('questionList');
+    const levelButtons = document.querySelectorAll('.level-option');
 
-    function getSelectedAnswers() {
-      return answers.map((_, index) => {
-        const input = document.querySelector(`input[name="q${index}"]:checked`);
-        return input?.value || null;
+    function getCurrentQuestions() {
+      return quizLevels[currentLevel].questions;
+    }
+
+    function renderQuestions() {
+      const questions = getCurrentQuestions();
+      questionList.innerHTML = questions.map((question, index) => {
+        return `
+          <div class="question-card" data-question="${index}">
+            <h2>${index + 1}. ${question.prompt}</h2>
+            <div class="options">
+              ${question.options
+                .map(
+                  option => `
+                    <label class="option">
+                      <input type="radio" name="q${index}" value="${option}" />
+                      <span class="option-label">${option}</span>
+                    </label>`
+                )
+                .join('')}
+            </div>
+          </div>`;
+      }).join('');
+
+      quizResult.classList.remove('visible');
+      progressFilled.style.width = '0%';
+    }
+
+    function updateActiveLevelButton() {
+      levelButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.level === currentLevel);
       });
     }
 
     function updateProgress() {
       const selected = getSelectedAnswers().filter(Boolean).length;
-      const percent = Math.round((selected / totalQuestions) * 100);
+      const percent = Math.round((selected / getCurrentQuestions().length) * 100);
       progressFilled.style.width = `${percent}%`;
     }
 
+    function getSelectedAnswers() {
+      return getCurrentQuestions().map((_, index) => {
+        const input = document.querySelector(`input[name="q${index}"]:checked`);
+        return input?.value || null;
+      });
+    }
+
     function showResult(score) {
+      const totalQuestions = getCurrentQuestions().length;
       quizResult.classList.add('visible');
       resultScore.textContent = `You scored ${score} / ${totalQuestions}`;
       if (score === totalQuestions) {
-        resultText.textContent = 'Perfect score! You know your quiz essentials. Great work!';
+        resultText.textContent = 'Perfect score! Great job completing this level.';
         quizResult.style.borderColor = 'rgba(16, 185, 129, 0.35)';
       } else if (score >= totalQuestions - 1) {
-        resultText.textContent = 'Almost there — just one small mistake. Review and try again!';
+        resultText.textContent = 'Almost there — one more correct answer and you ace the level!';
         quizResult.style.borderColor = 'rgba(59, 130, 246, 0.3)';
       } else {
-        resultText.textContent = 'Good effort! Review the questions and submit again to improve your score.';
+        resultText.textContent = 'Nice effort! Try again or switch levels to practice more.';
         quizResult.style.borderColor = 'rgba(239, 68, 68, 0.25)';
       }
     }
 
     function validateAnswers(selections) {
       return selections.every(selection => selection !== null);
+    }
+
+    function switchLevel(level) {
+      if (!quizLevels[level]) return;
+      currentLevel = level;
+      updateActiveLevelButton();
+      renderQuestions();
     }
 
     submitBtn.addEventListener('click', () => {
@@ -361,23 +449,29 @@
       }
 
       const score = selections.reduce((total, value, index) => {
-        return total + (value === answers[index] ? 1 : 0);
+        return total + (value === getCurrentQuestions()[index].answer ? 1 : 0);
       }, 0);
 
       showResult(score);
     });
 
     resetBtn.addEventListener('click', () => {
-      document.querySelectorAll('input[type="radio"]').forEach(input => {
-        input.checked = false;
-      });
-      quizResult.classList.remove('visible');
-      progressFilled.style.width = '0%';
+      renderQuestions();
     });
 
-    document.querySelectorAll('input[type="radio"]').forEach(input => {
-      input.addEventListener('change', updateProgress);
+    document.getElementById('levelSelection').addEventListener('click', event => {
+      if (!event.target.closest('.level-option')) return;
+      const button = event.target.closest('.level-option');
+      switchLevel(button.dataset.level);
     });
+
+    questionList.addEventListener('change', event => {
+      if (event.target.matches('input[type="radio"]')) {
+        updateProgress();
+      }
+    });
+
+    renderQuestions();
   </script>
 </body>
 </html>

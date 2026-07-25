@@ -1,13 +1,14 @@
 # Responsive Quiz Page
 
-This repository contains a simple responsive quiz implemented in a single HTML file.
+This repository contains a responsive quiz implemented in a single HTML file.
 
 ## `index.html`
 
-- A mobile-friendly quiz page with styled question cards, answer options, and buttons.
-- Includes a progress bar that updates as you select answers.
-- Shows score feedback after submitting all questions.
-- Supports resetting answers and re-taking the quiz.
+- Contains a three-level quiz with HTML, CSS, and Python topics.
+- Lets the user select a level and loads three corresponding questions.
+- Includes a responsive layout for desktop and mobile.
+- Shows a progress bar and score feedback after submission.
+- Supports resetting answers and switching quiz levels.
 
 ## How to run
 
