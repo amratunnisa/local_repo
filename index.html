@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Responsive Quiz</title>
+  <style>
+    :root {
+      --bg: #f3f7ff;
+      --card: #ffffff;
+      --primary: #405cf5;
+      --primary-soft: #dbe2ff;
+      --text: #1e293b;
+      --muted: #60718f;
+      --success: #10b981;
+      --danger: #ef4444;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #eef3ff 0%, #f8fafc 100%);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+    }
+
+    .quiz-shell {
+      width: min(100%, 900px);
+      background: var(--card);
+      border-radius: 26px;
+      box-shadow: 0 30px 80px rgba(56, 66, 97, 0.12);
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .quiz-header {
+      padding: 2rem 2rem 1.5rem;
+      background: linear-gradient(135deg, rgba(64, 92, 245, 0.12), rgba(34, 125, 255, 0.08));
+    }
+
+    .quiz-header h1 {
+      margin: 0 0 0.75rem;
+      font-size: clamp(1.75rem, 2.5vw, 2.4rem);
+      line-height: 1.05;
+    }
+
+    .quiz-header p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 40rem;
+    }
+
+    .quiz-content {
+      display: grid;
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+
+    .question-card {
+      display: grid;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-radius: 22px;
+      background: #f8faff;
+      border: 1px solid rgba(96, 113, 143, 0.1);
+    }
+
+    .question-card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .options {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.95rem 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(96, 113, 143, 0.18);
+      background: white;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .option:hover {
+      transform: translateY(-1px);
+      border-color: var(--primary);
+      background: rgba(64, 92, 245, 0.05);
+    }
+
+    .option input {
+      accent-color: var(--primary);
+      width: 1.2rem;
+      height: 1.2rem;
+      margin: 0;
+    }
+
+    .option-label {
+      flex: 1;
+      margin: 0;
+      font-size: 0.98rem;
+      color: var(--text);
+    }
+
+    .quiz-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .quiz-actions button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.9rem 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .quiz-actions button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .quiz-result {
+      display: none;
+      padding: 1.5rem;
+      border-radius: 22px;
+      background: #eef8f6;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: var(--text);
+    }
+
+    .quiz-result.visible {
+      display: block;
+    }
+
+    .result-score {
+      font-size: clamp(1.2rem, 1.6vw, 1.6rem);
+      margin: 0 0 0.5rem;
+    }
+
+    .result-text {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .progress-bar {
+      height: 12px;
+      background: rgba(100, 116, 139, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-filled {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #60a5fa 0%, #405cf5 100%);
+      transition: width 0.3s ease;
+    }
+
+    .footer-note {
+      padding: 1.5rem 2rem 2rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem;
+      }
+
+      .quiz-shell {
+        border-radius: 20px;
+      }
+
+      .quiz-header,
+      .quiz-content,
+      .footer-note {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+      }
+
+      .quiz-header {
+        padding-top: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="quiz-shell" aria-label="Responsive quiz">
+    <section class="quiz-header">
+      <h1>Quick Responsive Quiz</h1>
+      <p>Test your knowledge with a mobile-friendly quiz. Select one answer per question and submit to see your score instantly.</p>
+    </section>
+
+    <section class="quiz-content" id="quizContent">
+      <div class="question-card" data-question="0">
+        <h2>1. Which HTML element is used to define important text?</h2>
+        <div class="options">
+          <label class="option">
+            <input type="radio" name="q0" value="strong" />
+            <span class="option-label">strong</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q0" value="important" />
+            <span class="option-label">important</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q0" value="bold" />
+            <span class="option-label">bold</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q0" value="em" />
+            <span class="option-label">em</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="question-card" data-question="1">
+        <h2>2. Which CSS property controls the space between lines of text?</h2>
+        <div class="options">
+          <label class="option">
+            <input type="radio" name="q1" value="letter-spacing" />
+            <span class="option-label">letter-spacing</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q1" value="line-height" />
+            <span class="option-label">line-height</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q1" value="word-spacing" />
+            <span class="option-label">word-spacing</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q1" value="text-align" />
+            <span class="option-label">text-align</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="question-card" data-question="2">
+        <h2>3. What does JavaScript use to handle asynchronous actions?</h2>
+        <div class="options">
+          <label class="option">
+            <input type="radio" name="q2" value="promises" />
+            <span class="option-label">Promises</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q2" value="selectors" />
+            <span class="option-label">Selectors</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q2" value="flexbox" />
+            <span class="option-label">Flexbox</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="q2" value="variables" />
+            <span class="option-label">Variables</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="quiz-actions">
+        <button class="btn-secondary" id="resetBtn" type="button">Reset answers</button>
+        <button class="btn-primary" id="submitBtn" type="button">Submit Quiz</button>
+      </div>
+
+      <div class="progress-bar" aria-hidden="true">
+        <div class="progress-filled" id="progressFilled"></div>
+      </div>
+
+      <div class="quiz-result" id="quizResult" aria-live="polite">
+        <p class="result-score" id="resultScore"></p>
+        <p class="result-text" id="resultText"></p>
+      </div>
+    </section>
+
+    <div class="footer-note">This responsive page works across desktop, tablet, and mobile screens. Try it on any device.</div>
+  </main>
+
+  <script>
+    const answers = [
+      'strong',
+      'line-height',
+      'promises'
+    ];
+
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const quizResult = document.getElementById('quizResult');
+    const resultScore = document.getElementById('resultScore');
+    const resultText = document.getElementById('resultText');
+    const progressFilled = document.getElementById('progressFilled');
+    const totalQuestions = answers.length;
+
+    function getSelectedAnswers() {
+      return answers.map((_, index) => {
+        const input = document.querySelector(`input[name="q${index}"]:checked`);
+        return input?.value || null;
+      });
+    }
+
+    function updateProgress() {
+      const selected = getSelectedAnswers().filter(Boolean).length;
+      const percent = Math.round((selected / totalQuestions) * 100);
+      progressFilled.style.width = `${percent}%`;
+    }
+
+    function showResult(score) {
+      quizResult.classList.add('visible');
+      resultScore.textContent = `You scored ${score} / ${totalQuestions}`;
+      if (score === totalQuestions) {
+        resultText.textContent = 'Perfect score! You know your quiz essentials. Great work!';
+        quizResult.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+      } else if (score >= totalQuestions - 1) {
+        resultText.textContent = 'Almost there — just one small mistake. Review and try again!';
+        quizResult.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+      } else {
+        resultText.textContent = 'Good effort! Review the questions and submit again to improve your score.';
+        quizResult.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+      }
+    }
+
+    function validateAnswers(selections) {
+      return selections.every(selection => selection !== null);
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const selections = getSelectedAnswers();
+      if (!validateAnswers(selections)) {
+        alert('Please answer all questions before submitting.');
+        return;
+      }
+
+      const score = selections.reduce((total, value, index) => {
+        return total + (value === answers[index] ? 1 : 0);
+      }, 0);
+
+      showResult(score);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      document.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.checked = false;
+      });
+      quizResult.classList.remove('visible');
+      progressFilled.style.width = '0%';
+    });
+
+    document.querySelectorAll('input[type="radio"]').forEach(input => {
+      input.addEventListener('change', updateProgress);
+    });
+  </script>
+</body>
+</html>
