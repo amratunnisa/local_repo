@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Quiz</title>
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #eef3ff; color: #1e293b; }
+    .page-shell { max-width: 900px; margin: 2rem auto; padding: 1rem; }
+    .quiz-card { background: white; border-radius: 24px; padding: 1.5rem; box-shadow: 0 20px 50px rgba(15,23,42,0.08); border: 1px solid rgba(148,163,184,0.15); }
+    .quiz-card h1 { margin-top: 0; font-size: 1.8rem; }
+    .quiz-card p { margin: 0.4rem 0 1rem; color: #475569; }
+    .options { display: grid; gap: 0.85rem; }
+    .option { display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1rem; border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; background: #f8fafc; cursor: pointer; }
+    .option:hover { background: #eff6ff; border-color: #93c5fd; }
+    .option input { accent-color: #405cf5; width: 1.2rem; height: 1.2rem; }
+    .quiz-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+    button { border: none; border-radius: 999px; padding: 0.95rem 1.5rem; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #405cf5; color: white; }
+    .btn-secondary { background: #dbe2ff; color: #1d4ed8; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 20px; background: #ecfdf5; border: 1px solid rgba(16,185,129,0.2); display: none; }
+    .result.visible { display: block; }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="quiz-card">
+      <h1 id="title">Student Quiz</h1>
+      <p id="description">Loading quiz...</p>
+      <div id="questionList"></div>
+      <div class="quiz-actions">
+        <button class="btn-secondary" id="backBtn" type="button">Back to assignments</button>
+        <button class="btn-primary" id="submitBtn" type="button">Submit Quiz</button>
+      </div>
+      <div id="result" class="result" aria-live="polite">
+        <p id="resultScore"></p>
+        <p id="resultText"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const quizBanks = {
+      html: [
+        [
+          { prompt: 'Which element creates a hyperlink?', options: ['<a>', '<link>', '<url>', '<href>'], answer: '<a>' },
+          { prompt: 'Which attribute gives the image path?', options: ['src', 'alt', 'title', 'href'], answer: 'src' },
+          { prompt: 'Which tag is used for the largest heading?', options: ['<h1>', '<h6>', '<head>', '<title>'], answer: '<h1>' }
+        ],
+        [
+          { prompt: 'Which tag starts a paragraph in HTML?', options: ['<p>', '<div>', '<span>', '<br>'], answer: '<p>' },
+          { prompt: 'Which element is used for an unordered list?', options: ['<ol>', '<ul>', '<li>', '<table>'], answer: '<ul>' },
+          { prompt: 'Which tag creates a line break?', options: ['<br>', '<hr>', '<lb>', '<p>'], answer: '<br>' }
+        ],
+        [
+          { prompt: 'Which tag defines a hyperlink?', options: ['<link>', '<a>', '<img>', '<href>'], answer: '<a>' },
+          { prompt: 'Which attribute adds alternate text to an image?', options: ['src', 'alt', 'id', 'class'], answer: 'alt' },
+          { prompt: 'Which tag can group a block of content?', options: ['<div>', '<span>', '<strong>', '<em>'], answer: '<div>' }
+        ]
+      ],
+      css: [
+        [
+          { prompt: 'Which property changes text color?', options: ['color', 'font-size', 'background', 'margin'], answer: 'color' },
+          { prompt: 'Which property adds space inside an element?', options: ['padding', 'margin', 'border', 'outline'], answer: 'padding' },
+          { prompt: 'Which display value makes elements flexibly arrange?', options: ['flex', 'block', 'inline', 'none'], answer: 'flex' }
+        ],
+        [
+          { prompt: 'Which property changes the background color?', options: ['background-color', 'color', 'font-family', 'text-align'], answer: 'background-color' },
+          { prompt: 'Which property controls text size?', options: ['font-size', 'width', 'padding', 'border'], answer: 'font-size' },
+          { prompt: 'Which property creates space outside an element?', options: ['margin', 'padding', 'border', 'display'], answer: 'margin' }
+        ],
+        [
+          { prompt: 'Which property controls the order of flex items?', options: ['order', 'display', 'justify-content', 'flex-direction'], answer: 'order' },
+          { prompt: 'Which property centers text horizontally?', options: ['text-align', 'vertical-align', 'align-items', 'justify-items'], answer: 'text-align' },
+          { prompt: 'Which property changes the thickness of a border?', options: ['border-width', 'background-color', 'color', 'margin'], answer: 'border-width' }
+        ]
+      ],
+      python: [
+        [
+          { prompt: 'Which keyword starts a function in Python?', options: ['def', 'function', 'class', 'loop'], answer: 'def' },
+          { prompt: 'How do you create a list in Python?', options: ['[1, 2, 3]', '{1, 2, 3}', '(1, 2, 3)', '<1, 2, 3>'], answer: '[1, 2, 3]' },
+          { prompt: 'Which symbol starts a comment in Python?', options: ['#', '//', '/*', '<!--'], answer: '#' }
+        ],
+        [
+          { prompt: 'Which function prints output?', options: ['print()', 'input()', 'len()', 'range()'], answer: 'print()' },
+          { prompt: 'Which data type stores true/false values?', options: ['bool', 'str', 'int', 'list'], answer: 'bool' },
+          { prompt: 'Which statement checks a condition?', options: ['if', 'for', 'while', 'def'], answer: 'if' }
+        ],
+        [
+          { prompt: 'Which loop repeats a fixed number of times?', options: ['for', 'if', 'while', 'return'], answer: 'for' },
+          { prompt: 'How do you read user input?', options: ['input()', 'print()', 'len()', 'type()'], answer: 'input()' },
+          { prompt: 'Which keyword defines a class?', options: ['class', 'def', 'return', 'import'], answer: 'class' }
+        ]
+      ]
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const count = Number(urlParams.get('count')) || 1;
+    const level = urlParams.get('level') || 'html';
+    const studentIndex = Number(urlParams.get('student')) || 1;
+    const title = document.getElementById('title');
+    const description = document.getElementById('description');
+    const questionList = document.getElementById('questionList');
+    const submitBtn = document.getElementById('submitBtn');
+    const backBtn = document.getElementById('backBtn');
+    const resultBox = document.getElementById('result');
+    const resultScore = document.getElementById('resultScore');
+    const resultText = document.getElementById('resultText');
+
+    const escapeHtml = (value) => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    const variantSet = quizBanks[level] || quizBanks.html;
+    const assignmentIndex = Math.min(Math.max(1, studentIndex), count) - 1;
+    const variant = variantSet[assignmentIndex % variantSet.length];
+    const levelTitle = level.charAt(0).toUpperCase() + level.slice(1);
+
+    title.textContent = `Quiz for Student ${assignmentIndex + 1}`;
+    description.textContent = `${levelTitle} Level - Quiz ${assignmentIndex + 1}`;
+
+    questionList.innerHTML = variant.map((question, questionIndex) => `
+      <div class="question-block" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; border-radius: 16px; background: #f8fafc; border: 1px solid rgba(148,163,184,0.25); margin-bottom: 1rem;">
+        <strong style="margin-bottom:0.75rem;">${questionIndex + 1}. ${question.prompt}</strong>
+        <div class="options">
+          ${question.options.map(option => `
+            <label class="option" style="border-radius: 14px; background: white; margin-bottom: 0.5rem; padding: 0.8rem;">
+              <input type="radio" name="question-${questionIndex}" value="${escapeHtml(option)}" />
+              <span>${escapeHtml(option)}</span>
+            </label>`).join('')}
+        </div>
+      </div>`).join('');
+
+    submitBtn.addEventListener('click', () => {
+      const selections = variant.map((_, questionIndex) => {
+        const input = document.querySelector(`input[name="question-${questionIndex}"]:checked`);
+        return input?.value || null;
+      });
+
+      if (selections.some(selection => selection === null)) {
+        alert('Please answer all questions before submitting.');
+        return;
+      }
+
+      const score = selections.reduce((total, value, index) => {
+        return total + (value === variant[index].answer ? 1 : 0);
+      }, 0);
+
+      resultBox.classList.add('visible');
+      resultScore.textContent = `Score: ${score} / ${variant.length}`;
+      resultText.textContent = score === variant.length ? 'Excellent work!' : 'Good effort. You can try again.';
+    });
+
+    backBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
