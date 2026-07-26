@@ -183,6 +183,30 @@
       color: var(--primary);
     }
 
+    .student-link {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 0.35rem 0;
+      padding: 0.95rem 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(96, 113, 143, 0.18);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.98rem;
+    }
+
+    .student-link.active {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .question-card.hidden {
+      display: none;
+    }
+
     .quiz-result {
       display: none;
       padding: 1.5rem;
@@ -260,6 +284,18 @@
 
     <section class="quiz-content" id="quizContent">
       <div class="question-card">
+        <h2 style="margin:0;">Assign quizzes to students</h2>
+        <p class="option-label" style="margin-bottom:1rem;">Enter the number of students and generate a unique quiz for each one.</p>
+        <div class="quiz-actions" style="justify-content:flex-start; margin-bottom:1rem;">
+          <label for="studentCount" class="option-label" style="margin:0;">Number of students:</label>
+          <input id="studentCount" type="number" min="1" max="50" value="3" style="padding:0.7rem 0.9rem; border:1px solid rgba(96, 113, 143, 0.18); border-radius:12px; width:120px;" />
+          <button class="btn-primary" id="assignBtn" type="button">Generate Assignments</button>
+        </div>
+        <p id="serverStatus" class="option-label" style="margin:0.4rem 0; color:#d97706;">Start the Python backend with <code>python student.py</code> and open http://127.0.0.1:8000/.</p>
+        <div id="studentAssignments" class="question-list"></div>
+      </div>
+
+      <div class="question-card">
         <h2 style="margin:0;">Select your quiz level</h2>
         <p class="option-label" style="margin-bottom:1rem;">Choose one of three levels to load a new set of quiz questions.</p>
         <div class="level-selection" id="levelSelection" role="tablist" aria-label="Select quiz level">
@@ -269,18 +305,18 @@
         </div>
       </div>
 
-      <div id="questionList" class="question-list"></div>
+      <div id="questionList" class="question-list" style="display:none;"></div>
 
-      <div class="quiz-actions">
+      <div class="quiz-actions" id="runnerActions" style="display:none;">
         <button class="btn-secondary" id="resetBtn" type="button">Reset answers</button>
         <button class="btn-primary" id="submitBtn" type="button">Submit Quiz</button>
       </div>
 
-      <div class="progress-bar" aria-hidden="true">
+      <div class="progress-bar" id="runnerProgress" aria-hidden="true" style="display:none;">
         <div class="progress-filled" id="progressFilled"></div>
       </div>
 
-      <div class="quiz-result" id="quizResult" aria-live="polite">
+      <div class="quiz-result" id="quizResult" aria-live="polite" style="display:none;">
         <p class="result-score" id="resultScore"></p>
         <p class="result-text" id="resultText"></p>
       </div>
@@ -291,109 +327,95 @@
 
   <script>
     const quizLevels = {
+      html: { title: 'HTML Level', description: 'Basics of HTML structure and semantics.' },
+      css: { title: 'CSS Level', description: 'Styling fundamentals for responsive layouts.' },
+      python: { title: 'Python Level', description: 'Core Python knowledge for beginner scripts.' }
+    };
+
+    const fallbackQuizBanks = {
       html: {
         title: 'HTML Level',
-        description: 'Basics of HTML structure and semantics.',
-        questions: [
-          {
-            prompt: 'Which HTML element is used to define important text?',
-            options: ['strong', 'important', 'bold', 'em'],
-            answer: 'strong'
-          },
-          {
-            prompt: 'Which element is used to create a hyperlink?',
-            options: ['<a>', '<link>', '<url>', '<href>'],
-            answer: '<a>'
-          },
-          {
-            prompt: 'Which attribute defines the alternate text for an image?',
-            options: ['src', 'alt', 'title', 'name'],
-            answer: 'alt'
-          }
+        variants: [
+          [
+            { prompt: 'Which element creates a hyperlink?', options: ['<a>', '<link>', '<url>', '<href>'], answer: '<a>' },
+            { prompt: 'Which attribute gives the image path?', options: ['src', 'alt', 'title', 'href'], answer: 'src' },
+            { prompt: 'Which tag is used for the largest heading?', options: ['<h1>', '<h6>', '<head>', '<title>'], answer: '<h1>' }
+          ],
+          [
+            { prompt: 'Which tag starts a paragraph in HTML?', options: ['<p>', '<div>', '<span>', '<br>'], answer: '<p>' },
+            { prompt: 'Which element is used for an unordered list?', options: ['<ol>', '<ul>', '<li>', '<table>'], answer: '<ul>' },
+            { prompt: 'Which tag creates a line break?', options: ['<br>', '<hr>', '<lb>', '<p>'], answer: '<br>' }
+          ],
+          [
+            { prompt: 'Which tag defines a hyperlink?', options: ['<link>', '<a>', '<img>', '<href>'], answer: '<a>' },
+            { prompt: 'Which attribute adds alternate text to an image?', options: ['src', 'alt', 'id', 'class'], answer: 'alt' },
+            { prompt: 'Which tag can group a block of content?', options: ['<div>', '<span>', '<strong>', '<em>'], answer: '<div>' }
+          ]
         ]
       },
       css: {
         title: 'CSS Level',
-        description: 'Styling fundamentals for responsive layouts.',
-        questions: [
-          {
-            prompt: 'Which CSS property controls the space between lines of text?',
-            options: ['letter-spacing', 'line-height', 'word-spacing', 'text-align'],
-            answer: 'line-height'
-          },
-          {
-            prompt: 'What CSS property is used to change text color?',
-            options: ['font-color', 'text-color', 'color', 'fill'],
-            answer: 'color'
-          },
-          {
-            prompt: 'Which display value helps build a flexible layout?',
-            options: ['grid', 'block', 'flex', 'inline'],
-            answer: 'flex'
-          }
+        variants: [
+          [
+            { prompt: 'Which property changes text color?', options: ['color', 'font-size', 'background', 'margin'], answer: 'color' },
+            { prompt: 'Which property adds space inside an element?', options: ['padding', 'margin', 'border', 'outline'], answer: 'padding' },
+            { prompt: 'Which display value makes elements flexibly arrange?', options: ['flex', 'block', 'inline', 'none'], answer: 'flex' }
+          ],
+          [
+            { prompt: 'Which property changes the background color?', options: ['background-color', 'color', 'font-family', 'text-align'], answer: 'background-color' },
+            { prompt: 'Which property controls text size?', options: ['font-size', 'width', 'padding', 'border'], answer: 'font-size' },
+            { prompt: 'Which property creates space outside an element?', options: ['margin', 'padding', 'border', 'display'], answer: 'margin' }
+          ],
+          [
+            { prompt: 'Which property controls the order of flex items?', options: ['order', 'display', 'justify-content', 'flex-direction'], answer: 'order' },
+            { prompt: 'Which property centers text horizontally?', options: ['text-align', 'vertical-align', 'align-items', 'justify-items'], answer: 'text-align' },
+            { prompt: 'Which property changes the thickness of a border?', options: ['border-width', 'background-color', 'color', 'margin'], answer: 'border-width' }
+          ]
         ]
       },
       python: {
         title: 'Python Level',
-        description: 'Core Python knowledge for beginner scripts.',
-        questions: [
-          {
-            prompt: 'Which keyword starts a function definition in Python?',
-            options: ['def', 'function', 'func', 'lambda'],
-            answer: 'def'
-          },
-          {
-            prompt: 'How do you create a list in Python?',
-            options: ['{1, 2, 3}', '[1, 2, 3]', '(1, 2, 3)', '<1, 2, 3>'],
-            answer: '[1, 2, 3]'
-          },
-          {
-            prompt: 'Which symbol begins a comment in Python?',
-            options: ['//', '#', '/*', '<!--'],
-            answer: '#'
-          }
+        variants: [
+          [
+            { prompt: 'Which keyword starts a function in Python?', options: ['def', 'function', 'class', 'loop'], answer: 'def' },
+            { prompt: 'How do you create a list in Python?', options: ['[1, 2, 3]', '{1, 2, 3}', '(1, 2, 3)', '<1, 2, 3>'], answer: '[1, 2, 3]' },
+            { prompt: 'Which symbol starts a comment in Python?', options: ['#', '//', '/*', '<!--'], answer: '#' }
+          ],
+          [
+            { prompt: 'Which function prints output?', options: ['print()', 'input()', 'len()', 'range()'], answer: 'print()' },
+            { prompt: 'Which data type stores true/false values?', options: ['bool', 'str', 'int', 'list'], answer: 'bool' },
+            { prompt: 'Which statement checks a condition?', options: ['if', 'for', 'while', 'def'], answer: 'if' }
+          ],
+          [
+            { prompt: 'Which loop repeats a fixed number of times?', options: ['for', 'if', 'while', 'return'], answer: 'for' },
+            { prompt: 'How do you read user input?', options: ['input()', 'print()', 'len()', 'type()'], answer: 'input()' },
+            { prompt: 'Which keyword defines a class?', options: ['class', 'def', 'return', 'import'], answer: 'class' }
+          ]
         ]
       }
     };
 
+    const SERVER_URL = 'http://127.0.0.1:8000';
     let currentLevel = 'html';
+    let assignments = [];
 
     const submitBtn = document.getElementById('submitBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const assignBtn = document.getElementById('assignBtn');
     const quizResult = document.getElementById('quizResult');
     const resultScore = document.getElementById('resultScore');
     const resultText = document.getElementById('resultText');
     const progressFilled = document.getElementById('progressFilled');
     const questionList = document.getElementById('questionList');
+    const studentAssignments = document.getElementById('studentAssignments');
+    const studentCountInput = document.getElementById('studentCount');
+    const serverStatus = document.getElementById('serverStatus');
     const levelButtons = document.querySelectorAll('.level-option');
 
-    function getCurrentQuestions() {
-      return quizLevels[currentLevel].questions;
-    }
-
-    function renderQuestions() {
-      const questions = getCurrentQuestions();
-      questionList.innerHTML = questions.map((question, index) => {
-        return `
-          <div class="question-card" data-question="${index}">
-            <h2>${index + 1}. ${question.prompt}</h2>
-            <div class="options">
-              ${question.options
-                .map(
-                  option => `
-                    <label class="option">
-                      <input type="radio" name="q${index}" value="${option}" />
-                      <span class="option-label">${option}</span>
-                    </label>`
-                )
-                .join('')}
-            </div>
-          </div>`;
-      }).join('');
-
-      quizResult.classList.remove('visible');
-      progressFilled.style.width = '0%';
-    }
+    const escapeHtml = value => String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
 
     function updateActiveLevelButton() {
       levelButtons.forEach(button => {
@@ -401,62 +423,134 @@
       });
     }
 
-    function updateProgress() {
-      const selected = getSelectedAnswers().filter(Boolean).length;
-      const percent = Math.round((selected / getCurrentQuestions().length) * 100);
+    function updateProgress(index) {
+      const assignment = assignments[index];
+      if (!assignment) return;
+      const answered = assignment.questions.filter((_, questionIndex) => {
+        const input = questionList.querySelector(`input[name="q${index}-${questionIndex}"]:checked`);
+        return Boolean(input);
+      }).length;
+      const percent = Math.round((answered / assignment.questions.length) * 100);
       progressFilled.style.width = `${percent}%`;
     }
 
-    function getSelectedAnswers() {
-      return getCurrentQuestions().map((_, index) => {
-        const input = document.querySelector(`input[name="q${index}"]:checked`);
-        return input?.value || null;
-      });
-    }
+    function showResult(index, score) {
+      const totalQuestions = assignments[index]?.questions.length || 0;
+      const resultEl = questionList.querySelector(`[data-result="${index}"]`);
+      if (!resultEl) return;
 
-    function showResult(score) {
-      const totalQuestions = getCurrentQuestions().length;
-      quizResult.classList.add('visible');
-      resultScore.textContent = `You scored ${score} / ${totalQuestions}`;
+      resultEl.classList.add('visible');
+      resultEl.querySelector('.result-score').textContent = `You scored ${score} / ${totalQuestions}`;
       if (score === totalQuestions) {
-        resultText.textContent = 'Perfect score! Great job completing this level.';
-        quizResult.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+        resultEl.querySelector('.result-text').textContent = 'Perfect score! Great job completing this quiz.';
       } else if (score >= totalQuestions - 1) {
-        resultText.textContent = 'Almost there — one more correct answer and you ace the level!';
-        quizResult.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+        resultEl.querySelector('.result-text').textContent = 'Almost there — one more correct answer and you ace the quiz!';
       } else {
-        resultText.textContent = 'Nice effort! Try again or switch levels to practice more.';
-        quizResult.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+        resultEl.querySelector('.result-text').textContent = 'Nice effort! Try again or switch levels to practice more.';
       }
     }
 
-    function validateAnswers(selections) {
-      return selections.every(selection => selection !== null);
+    function buildLocalAssignments(count, level) {
+      const levelData = fallbackQuizBanks[level] || fallbackQuizBanks.html;
+      const variants = levelData.variants;
+      return Array.from({ length: count }, (_, studentIndex) => {
+        const variant = variants[studentIndex % variants.length];
+        return {
+          student: `Student ${studentIndex + 1}`,
+          quiz: `Quiz ${studentIndex + 1}`,
+          level_title: levelData.title,
+          questions: variant,
+        };
+      });
+    }
+
+    async function renderStudentAssignments() {
+      const count = Math.max(1, parseInt(studentCountInput.value, 10) || 1);
+      studentAssignments.innerHTML = '<p class="option-label" style="margin:0.4rem 0;">Loading quizzes...</p>';
+
+      try {
+        const response = await fetch(`${SERVER_URL}/assignments?count=${encodeURIComponent(count)}&level=${encodeURIComponent(currentLevel)}`);
+        if (!response.ok) {
+          throw new Error('Unable to load quizzes');
+        }
+
+        const data = await response.json();
+        assignments = data.assignments || buildLocalAssignments(count, currentLevel);
+        serverStatus.textContent = `Python backend is running at ${SERVER_URL}`;
+        serverStatus.style.color = '#16a34a';
+      } catch (error) {
+        assignments = buildLocalAssignments(count, currentLevel);
+        serverStatus.textContent = 'Python backend is not running. Showing local quizzes instead.';
+        serverStatus.style.color = '#dc2626';
+      }
+
+      studentAssignments.innerHTML = assignments
+        .map((item, index) => `<a class="student-link" data-assignment="${index}" href="quiz.html?count=${count}&level=${encodeURIComponent(currentLevel)}&student=${index + 1}">${escapeHtml(item.student)} -> ${escapeHtml(item.quiz)} (${escapeHtml(item.level_title)})</a>`)
+        .join('');
+
+      questionList.innerHTML = assignments.map((assignment, index) => `
+        <div class="question-card${index === 0 ? '' : ' hidden'}" data-assignment="${index}">
+          <h2>${escapeHtml(assignment.student)} — ${escapeHtml(assignment.quiz)}</h2>
+          <p class="option-label" style="margin:0;">${escapeHtml(assignment.level_title)}</p>
+          ${assignment.questions.map((question, questionIndex) => `
+            <div style="padding:0.95rem 1rem; border:1px solid rgba(96, 113, 143, 0.12); border-radius:16px; background:white;">
+              <h2 style="font-size:1rem; margin:0 0 0.75rem;">${questionIndex + 1}. ${escapeHtml(question.prompt)}</h2>
+              <div class="options">
+                ${question.options.map(option => `
+                  <label class="option">
+                    <input type="radio" name="q${index}-${questionIndex}" value="${escapeHtml(option)}" />
+                    <span class="option-label">${escapeHtml(option)}</span>
+                  </label>`).join('')}
+              </div>
+            </div>`).join('')}
+          <div class="quiz-actions" style="justify-content:flex-start; margin-top:0.5rem;">
+            <button class="btn-primary" type="button" data-submit="${index}">Submit ${escapeHtml(assignment.quiz)}</button>
+          </div>
+          <div class="quiz-result" data-result="${index}" aria-live="polite">
+            <p class="result-score"></p>
+            <p class="result-text"></p>
+          </div>
+        </div>`).join('');
+      showAssignment(0);
     }
 
     function switchLevel(level) {
       if (!quizLevels[level]) return;
       currentLevel = level;
       updateActiveLevelButton();
-      renderQuestions();
+      renderStudentAssignments();
     }
 
     submitBtn.addEventListener('click', () => {
-      const selections = getSelectedAnswers();
-      if (!validateAnswers(selections)) {
+      if (!assignments.length) {
+        alert('Generate the quizzes first.');
+        return;
+      }
+
+      const firstAssignment = assignments[0];
+      const selections = firstAssignment.questions.map((_, questionIndex) => {
+        const input = questionList.querySelector(`input[name="q0-${questionIndex}"]:checked`);
+        return input?.value || null;
+      });
+
+      if (selections.some(selection => selection === null)) {
         alert('Please answer all questions before submitting.');
         return;
       }
 
       const score = selections.reduce((total, value, index) => {
-        return total + (value === getCurrentQuestions()[index].answer ? 1 : 0);
+        return total + (value === firstAssignment.questions[index].answer ? 1 : 0);
       }, 0);
 
-      showResult(score);
+      showResult(0, score);
     });
 
     resetBtn.addEventListener('click', () => {
-      renderQuestions();
+      renderStudentAssignments();
+    });
+
+    assignBtn.addEventListener('click', () => {
+      renderStudentAssignments();
     });
 
     document.getElementById('levelSelection').addEventListener('click', event => {
@@ -467,11 +561,51 @@
 
     questionList.addEventListener('change', event => {
       if (event.target.matches('input[type="radio"]')) {
-        updateProgress();
+        const match = event.target.name.match(/^q(\d+)-(\d+)$/);
+        if (match) {
+          updateProgress(Number(match[1]));
+        }
       }
     });
 
-    renderQuestions();
+    questionList.addEventListener('click', event => {
+      const button = event.target.closest('[data-submit]');
+      if (!button) return;
+      const assignmentIndex = Number(button.dataset.submit);
+      const assignment = assignments[assignmentIndex];
+      if (!assignment) return;
+
+      const selections = assignment.questions.map((_, questionIndex) => {
+        const input = questionList.querySelector(`input[name="q${assignmentIndex}-${questionIndex}"]:checked`);
+        return input?.value || null;
+      });
+
+      if (selections.some(selection => selection === null)) {
+        alert('Please answer all questions before submitting.');
+        return;
+      }
+
+      const score = selections.reduce((total, value, index) => {
+        return total + (value === assignment.questions[index].answer ? 1 : 0);
+      }, 0);
+
+      showResult(assignmentIndex, score);
+    });
+
+    function showAssignment(index) {
+      const cards = questionList.querySelectorAll('.question-card');
+      cards.forEach(card => {
+        const cardIndex = Number(card.dataset.assignment);
+        card.classList.toggle('hidden', cardIndex !== index);
+      });
+      const buttons = studentAssignments.querySelectorAll('.student-link');
+      buttons.forEach(button => {
+        button.classList.toggle('active', Number(button.dataset.assignment) === index);
+      });
+    }
+
+    updateActiveLevelButton();
+    renderStudentAssignments();
   </script>
 </body>
 </html>
